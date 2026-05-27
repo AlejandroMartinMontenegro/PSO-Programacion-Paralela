@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # PSO — Particle Swarm Optimization with Parallel Strategies
 
 Final year project for the Parallel Programming course at CUNEF Universidad.
@@ -233,3 +234,7 @@ Run all tests:
 ## Author
 
 Alejandro Martín Montenegro
+=======
+# PSO-Programacion-Paralela
+This repository presents a modular and reproducible implementation of Particle Swarm Optimization (PSO designed as an experimental testbed for evaluating parallel and concurrent programming strategies in Python.  
+>>>>>>> 8227b458bb4834e6469ff2bb6af41706cf811cae

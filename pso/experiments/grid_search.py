@@ -10,40 +10,48 @@ import logging
 from pathlib import Path
 from pso.experiments.runner import run_pso
 from pso.io.storage import save_results
-from pso.parallel.sequential_eval import SequentialEvaluator
+from pso.parallel.sequential_eval import SequentialEvaluator, BaseEvaluator
 
 logger = logging.getLogger(__name__)
 
 
 def run_grid_search(objective: str, dim: int, grid: dict, fixed: dict, n_seeds: int,
-    base_seed: int, results_dir: str = "results/grid_search") -> list[dict]:
+    base_seed: int, evaluator: BaseEvaluator | None = None,
+    results_dir: str = "results/grid_search") -> list[dict]:
     
     """
     Runs PSO for all combinations of hyperparameters in the grid.
     Each combination is evaluated across multiple seeds and averaged.
 
     Args:
-        objective: Benchmark function name.
-        dim: Search space dimensions.
-        grid: Dict with lists of values for w, c1, c2, n_particles.
-        fixed: Dict with fixed PSO parameters (max_iter, tolerance, etc).
-        n_seeds: Number of seeds per combination.
-        base_seed: Base seed. Seeds = [base_seed + i for i in range(n_seeds)].
-        results_dir: Directory to save individual run JSONs.
+        objective:    Benchmark function name.
+        dim:          Search space dimensions.
+        grid:         Dict with lists of values for w, c1, c2, n_particles.
+        fixed:        Dict with fixed PSO parameters (max_iter, tolerance, etc).
+        n_seeds:      Number of seeds per combination.
+        base_seed:    Base seed. Seeds = [base_seed + i for i in range(n_seeds)].
+        evaluator:    Evaluator instance. Defaults to SequentialEvaluator (V0).
+        results_dir:  Directory to save individual run JSONs.
 
     Returns: List of summary dicts, one per hyperparameter combination.
     """
+    if evaluator is None:
+        evaluator = SequentialEvaluator()
+
     seeds = [base_seed + i for i in range(n_seeds)]
     param_names  = ["w", "c1", "c2", "n_particles"]
     param_values = [grid[p] for p in param_names]
     combinations = list(itertools.product(*param_values))
     total = len(combinations) * len(seeds)
+    evaluator_name = repr(evaluator).split("(")[0]
 
-    logger.info(f"Grid search | objective={objective} dim={dim} "
-                 f"combinations={len(combinations)} seeds={seeds} total_runs={total}")
+    logger.info(
+        f"Grid search | objective={objective} dim={dim} evaluator={evaluator_name} "
+        f"combinations={len(combinations)} seeds={seeds} total_runs={total}"
+    )
 
     output_dir = Path(results_dir)
-    output_dir.mkdir(parents = True, exist_ok = True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     summary_rows: list[dict] = []
     completed = 0
@@ -62,12 +70,13 @@ def run_grid_search(objective: str, dim: int, grid: dict, fixed: dict, n_seeds: 
                 max_iter=fixed["max_iter"],
                 w=w, c1=c1, c2=c2,
                 seed=seed,
-                evaluator=SequentialEvaluator(),
+                evaluator=evaluator,
                 tolerance=fixed["tolerance"],
                 tolerance_window=fixed["tolerance_window"],
-                stagnation_window=fixed["stagnation_window"])
+                stagnation_window=fixed["stagnation_window"],
+            )
 
-            save_results( results=results, results_dir=str(output_dir / "runs"), overwrite=False)
+            save_results(results=results, results_dir=str(output_dir / "runs"), overwrite=False)
 
             seed_fitnesses.append(results["results"]["best_fitness"])
             seed_times.append(results["timing"]["total_s"])
@@ -75,19 +84,20 @@ def run_grid_search(objective: str, dim: int, grid: dict, fixed: dict, n_seeds: 
             completed += 1
 
         avg_fitness = sum(seed_fitnesses) / len(seed_fitnesses)
-        avg_time = sum(seed_times) / len(seed_times)
-        avg_iters = sum(seed_iters) / len(seed_iters)
+        avg_time    = sum(seed_times) / len(seed_times)
+        avg_iters   = sum(seed_iters) / len(seed_iters)
 
         row = {
+            "evaluator":       evaluator_name,
             "w": w, "c1": c1, "c2": c2, "n_particles": n_particles,
             "avg_best_fitness": avg_fitness,
-            "avg_time_s": avg_time,
+            "avg_time_s":       avg_time,
             "avg_n_iterations": avg_iters,
-            "n_seeds": n_seeds,
-            "objective": objective,
-            "dim": dim,
+            "n_seeds":          n_seeds,
+            "objective":        objective,
+            "dim":              dim,
         }
-        
+
         summary_rows.append(row)
 
         logger.info(
@@ -95,8 +105,8 @@ def run_grid_search(objective: str, dim: int, grid: dict, fixed: dict, n_seeds: 
             f"avg_fitness={avg_fitness:.3e} avg_time={avg_time:.3f}s"
         )
 
-    # Save CSV summary
-    csv_path = output_dir / f"summary_{objective}_d{dim}.csv"
+    # Save CSV summary — one per evaluator
+    csv_path = output_dir / f"summary_{objective}_d{dim}_{evaluator_name}.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=summary_rows[0].keys())
         writer.writeheader()
