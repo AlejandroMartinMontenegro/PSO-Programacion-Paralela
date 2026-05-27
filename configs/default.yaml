@@ -1,0 +1,35 @@
+# Default configuration for a single PSO run.
+# This file is read by scripts/run_pso.py when no other config is specified.
+
+pso:
+  n_particles: 30
+  max_iter: 200
+  w: 0.7            # inertia weight
+  c1: 1.5           # individual memory coefficient
+  c2: 1.5           # social influence coefficient
+  tolerance: 1.0e-6
+  tolerance_window: 30
+  stagnation_window: 50
+
+bounds:
+  strategy: "clamp"
+
+reproducibility:
+  seed: 42
+
+objective:
+  name: "sphere"
+  dim: 10
+
+parallel:
+  strategy: "sequential"
+  n_workers: 4        # used by threading and multiprocessing evaluators
+
+logging:
+  level: "INFO"       # DEBUG | INFO | WARNING
+  log_to_file: false
+  log_dir: "results/logs"
+
+output:
+  results_dir: "results"
+  overwrite: false    # true during development, false for real experiments

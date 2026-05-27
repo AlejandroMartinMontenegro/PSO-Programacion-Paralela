@@ -1,0 +1,26 @@
+# Entorno virtual
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Resultados generados
+results/*
+!results/.gitkeep
+
+# VS Code
+.vscode/
+
+# Pytest
+.pytest_cache/
+.coverage
+
+# Pip editable install
+*.egg-info/
+dist/
+build/
+
+# Delivery ZIPs
+*.zip

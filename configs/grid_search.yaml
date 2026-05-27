@@ -1,0 +1,19 @@
+grid:
+  w:           [0.4, 0.7, 0.9]
+  c1:          [1.0, 1.5, 2.0]
+  c2:          [1.0, 1.5, 2.0]
+  n_particles: [20, 50]
+
+fixed:
+  max_iter: 100
+  tolerance: 1.0e-6
+  tolerance_window: 30
+  stagnation_window: 50
+
+objective:
+  name: "rastrigin"
+  dim: 10
+
+experiment:
+  n_seeds: 5
+  metric: "best_fitness"
