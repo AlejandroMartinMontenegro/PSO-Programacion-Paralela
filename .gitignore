@@ -9,6 +9,9 @@ __pycache__/
 # Resultados generados
 results/*
 !results/.gitkeep
+!results/benchmarks/
+!results/grid_search/*.csv
+!results/plots/*.png
 
 # VS Code
 .vscode/
